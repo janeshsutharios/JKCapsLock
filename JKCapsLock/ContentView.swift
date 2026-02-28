@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-
+//
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarController: StatusBarController?
     var capsMonitor: CapsLockMonitor?
@@ -92,22 +92,34 @@ final class StatusBarController {
         self.capsMonitor = capsMonitor
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
-        if let button = statusItem.button {
-            button.action = #selector(menuClicked(_:))
-            button.target = self
-            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        }
+        // DO NOT set button.action/target when using statusItem.menu
+        // just set an initial appearance
+        updateAppearance(isCapsOn: capsMonitor.isCapsLockOn)
 
-        //constructMenu()
+        // build and attach the menu
+        constructMenu()
     }
 
     private func constructMenu() {
         let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Caps Lock Status", action: nil, keyEquivalent: ""))
+
+        // show a non-clickable status label
+        let statusLabel = NSMenuItem(title: "Caps Lock: \(capsMonitor.isCapsLockOn ? "ON" : "OFF")",
+                                     action: nil,
+                                     keyEquivalent: "")
+        statusLabel.isEnabled = false
+       // menu.addItem(statusLabel)
+
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q"))
+
+        // create quit item and set target to self so selector resolves
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
+        quitItem.target = self
+        menu.addItem(quitItem)
+
         statusItem.menu = menu
     }
+
 
     func updateAppearance(isCapsOn: Bool) {
         guard let button = statusItem.button else { return }
@@ -139,7 +151,7 @@ final class StatusBarController {
         NSApp.terminate(nil)
     }
 }
-
+//
 // NOTES for the developer / user:
 // 1) This is a minimal single-file macOS Status Bar app using SwiftUI app lifecycle + AppDelegate.
 // 2) To use in Xcode: create a new macOS App project (SwiftUI), replace the main App file with this file.
